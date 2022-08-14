@@ -15,7 +15,9 @@ app.use(cors());
 
 app.use("/posts", postRoutes);
 app.use("/user", userRoutes);
-
+app.get("/", (req, res) => {
+  res.send("Hello to Memes API");
+});
 const PORT = process.env.PORT || 5001;
 const url = process.env.CONNECTION_URL;
 mongoose
