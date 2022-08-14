@@ -2,51 +2,69 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
-const secret = 'test';
+const secret = "test";
 export const signin = async (req, res) => {
-    //get email password from frontend
-    const { email, password } = req.body;
+  //get email password from frontend
+  const { email, password } = req.body;
 
-    try {
-        //find old user
-        const existingUser = await User.findOne({ email });
+  try {
+    //find old user
+    const existingUser = await User.findOne({ email });
 
-        if (!existingUser) return res.status(404).json({ message: "User doesn't exist" });
+    if (!existingUser)
+      return res.status(404).json({ message: "User doesn't exist" });
 
-        const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
 
-        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
-        //send json web token if user exists and password is correct
-        const token = jwt.sign({ email: existingUser.email, id: existingUser._id }, secret, { expiresIn: "1h" });
+    if (!isPasswordCorrect)
+      return res.status(400).json({ message: "Invalid credentials" });
+    //send json web token if user exists and password is correct
+    const token = jwt.sign(
+      { email: existingUser.email, id: existingUser._id },
+      secret,
+      { expiresIn: "1h" }
+    );
 
-        res.status(200).json({ result: existingUser, token });
-    } catch (err) {
-        res.status(500).json({ message: "Something went wrong" });
-    }
+    res.status(200).json({ result: existingUser, token });
+  } catch (err) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
 };
 
 export const signup = async (req, res) => {
-    //get email password from frontend
-    const { email, password, confirmPassword, firstName, lastName } = req.body;
+  //get email password from frontend
+  const { email, password, confirmPassword, firstName, lastName } = req.body;
 
-    try {
-        const existingUser = await User.findOne({ email });
+  try {
+    const existingUser = await User.findOne({ email });
 
-        if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
-        if(password!==confirmPassword) return res.status(400).json({message:"Passwords dont match"});
-        
-        const hashedPassword = await bcrypt.hash(password, 12);
+    if (password !== confirmPassword)
+      return res.status(400).json({ message: "Passwords dont match" });
 
-        // create new user
-        const result = await User.create({ email, password: hashedPassword, name: `${firstName} ${lastName}` });
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-        const token = jwt.sign( { email: result.email, id: result._id }, secret, { expiresIn: "1h" } );
+    // create new user
+    const result = await User.create({
+      email,
+      password: hashedPassword,
+      name: `${firstName} ${lastName}`,
+      creator: `${firstName}_${lastName}_${email}`,
+    });
 
-        res.status(201).json({ result, token });
-    } catch (error) {
-        res.status(500).json({ message: "Something went wrong" });
-        
-        console.log(error);
-    }
+    const token = jwt.sign({ email: result.email, id: result._id }, secret, {
+      expiresIn: "1h",
+    });
+
+    res.status(201).json({ result, token });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong" });
+
+    console.log(error);
+  }
 };
